@@ -73,33 +73,39 @@ function onCalculate(date) {
       escapeDirections
     );
 
-    // 渲染結果 (帶交錯動畫)
-    createNinePalaceGrid(palaceContainer, escapeDirections, stemInteraction, advancedData);
+    // 渲染結果 (按瀑布流步進載入)
+    // 1. 五行能量 (氣數)
+    createEnergyMeter(energyContainer, energyResult);
 
+    // 2. 日時生剋 (主客關係)
     setTimeout(() => {
       createStemRelator(stemContainer, stemInteraction);
-    }, 150);
+    }, 200);
 
+    // 3. 九宮方位 (圖表圖例)
     setTimeout(() => {
-      createEnergyMeter(energyContainer, energyResult);
-    }, 300);
-
-    setTimeout(() => {
-      createMasterVerdictPanel(verdictContainer, masterVerdict);
+      createNinePalaceGrid(palaceContainer, escapeDirections, stemInteraction, advancedData);
     }, 450);
 
+    // 4. 大師總評 (指點迷津)
+    setTimeout(() => {
+      createMasterVerdictPanel(verdictContainer, masterVerdict);
+    }, 700);
+
+    // 5. 詳細資訊 (四柱數據)
     setTimeout(() => {
       createResultPanel(resultContainer, {
         fourPillars,
         monthGeneralInfo,
         date,
       });
-    }, 600);
+    }, 950);
 
-    // 滾動到結果
+    // 滾動到第一個結果區 (能量區)
     setTimeout(() => {
-      palaceContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
+      energyContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+
 
   } catch (err) {
     console.error('計算錯誤:', err);
