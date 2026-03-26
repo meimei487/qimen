@@ -48,20 +48,25 @@ function getWuxingColor(wuxing) {
 // ---------------------------------------------------------
 export function createWarningPanel(container, advancedData) {
   if (!advancedData.isJieLu) {
-    container.innerHTML = ''; // 沒有則隱藏
-    return;
+    container.innerHTML = `
+      <div class="legend-group glass-panel result-area" style="opacity: 0.7; border-left: 5px solid #10b981; background: rgba(16, 185, 129, 0.03);">
+         <div style="color: #6ee7b7; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+           <span style="font-size: 1.2rem;">✅</span> 當前時空無重大「截路」禁忌，可放心依計畫行事。
+         </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="legend-group glass-panel result-area" style="border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+         <div class="legend-title" style="color: #f87171; font-weight: 900; letter-spacing: 0.1em;">
+           <span class="legend-icon">🛑</span> 特殊重大禁忌 (時辰大忌)
+         </div>
+         <div style="margin-top: 10px; color: #fca5a5; font-size: 1.05rem; line-height: 1.6;">
+            <b>截路空亡</b>：此時辰辦事極易遇阻或徒勞無功。<b>逢此大忌，宜守不宜動。</b>
+         </div>
+      </div>
+    `;
   }
-  
-  container.innerHTML = `
-    <div class="legend-group glass-panel result-area" style="border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
-       <div class="legend-title" style="color: #f87171; font-weight: 900; letter-spacing: 0.1em;">
-         <span class="legend-icon">🛑</span> 特殊重大禁忌 (時辰大忌)
-       </div>
-       <div style="margin-top: 10px; color: #fca5a5; font-size: 1.05rem; line-height: 1.6;">
-          <b>截路空亡</b>：此時辰辦事極易遇阻或徒勞無功。<b>逢此大忌，宜守不宜動。</b>
-       </div>
-    </div>
-  `;
   requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
 }
 
