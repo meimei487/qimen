@@ -328,67 +328,52 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
 
   svgContent += '</svg>';
 
-  // Legend
-  let legendHTML = '';
-  if (escapeData || stemInteraction) {
-    const escapePart = escapeData ? `
-      <div class="legend-group">
-        <div class="legend-title">📍 泊地方位</div>
-        <div class="legend-items">
-          <div class="legend-item taichong"><span class="legend-dot"></span><span>太沖（卯）→ ${escapeData.taiChong?.direction || '—'}</span></div>
-          <div class="legend-item xiaoji"><span class="legend-dot"></span><span>小吉（未）→ ${escapeData.xiaoJi?.direction || '—'}</span></div>
-          <div class="legend-item congkui"><span class="legend-dot"></span><span>從魁（酉）→ ${escapeData.congKui?.direction || '—'}</span></div>
-        </div>
+  // 建立獨立的區塊 HTML
+  const escapePart = escapeData ? `
+    <div class="legend-group glass-panel result-area" style="margin-top: 16px;">
+      <div class="legend-title"><span class="legend-icon" style="color:#ffd700">📍</span> 泊地吉方 (天門三泊)</div>
+      <div class="legend-items">
+        <div class="legend-item taichong"><span class="legend-dot"></span><span>太沖（卯）&rarr; <b style="color:#ffd700">${escapeData.taiChong?.direction || '—'}</b></span></div>
+        <div class="legend-item xiaoji"><span class="legend-dot"></span><span>小吉（未）&rarr; <b style="color:#60a5fa">${escapeData.xiaoJi?.direction || '—'}</b></span></div>
+        <div class="legend-item congkui"><span class="legend-dot"></span><span>從魁（酉）&rarr; <b style="color:#c084fc">${escapeData.congKui?.direction || '—'}</b></span></div>
       </div>
-    ` : '';
+    </div>
+  ` : '';
 
-    const stemPart = stemInteraction ? (() => {
-      const { relation, verdict, dayInfo, hourInfo } = stemInteraction;
-      const rc = RELATION_COLORS[relation] || '#94a3b8';
-      const isHourToDay = relation === 'generate' || relation === 'overcome';
-      
-      const dayHtml = `<span class="sp-badge day-badge">日 ${dayInfo.stem}</span><span class="sp-palace">${dayInfo.palace}</span>`;
-      const hourHtml = `<span class="sp-badge hour-badge">時 ${hourInfo.stem}</span><span class="sp-palace">${hourInfo.palace}</span>`;
-      const relLabel = RELATION_LABELS[relation] || '比和';
-
-      return `
-        <div class="legend-group legend-stem-group">
-          <div class="legend-title">🔗 日時宮位生剋</div>
-          <div class="stem-palace-row">
-            ${isHourToDay ? hourHtml : dayHtml}
-            <span class="sp-relation" style="color:${rc}">${relLabel}</span>
-            ${isHourToDay ? dayHtml : hourHtml}
-          </div>
-          <div class="sp-verdict" style="color:${rc}">${verdict}</div>
-        </div>
-      `;
-    })() : '';
-
-    const advancedPart = (advancedData.isJieLu || advancedData.kongWang?.length) ? `
-      <div class="legend-group">
-        <div class="legend-title" style="color: #f87171;">⚠️ 特殊星曜警示</div>
-        <div class="legend-items" style="font-size: 0.9em; opacity: 0.9;">
-          ${advancedData.isJieLu ? `<div style="margin-bottom:4px">⛔ <span style="color:#f87171;font-weight:bold;">截路空亡</span>：此時辰出行、辦事易遇阻礙或空跑一趟。</div>` : ''}
-          ${advancedData.kongWang?.length ? `<div>🌫️ <span style="color:#94a3b8;font-weight:bold;">日系空亡</span>：落入【${advancedData.kongWang.join('、')}】宮位之事物，能量將大幅減弱。</div>` : ''}
-        </div>
+  const advancedPart = (advancedData.isJieLu || advancedData.kongWang?.length) ? `
+    <div class="legend-group glass-panel result-area" style="margin-top: 16px; border-left: 4px solid #f87171;">
+      <div class="legend-title" style="color: #f87171;"><span class="legend-icon">⚠️</span> 特殊星曜警示</div>
+      <div class="legend-items" style="font-size: 0.95em;">
+        ${advancedData.isJieLu ? `
+          <div style="margin-bottom:8px; background: rgba(239, 68, 68, 0.08); padding: 10px; border-radius: 8px;">
+            <span style="color:#ef4444;font-weight:bold;">🛑 截路空亡</span>：此時辰出行辦事易遇阻礙，建議守成。
+          </div>` : ''}
+        ${advancedData.kongWang?.length ? `
+          <div style="display:flex; align-items:flex-start; gap:8px; padding: 0 5px;">
+            <span style="font-size:1.2rem">🌫️</span>
+            <span><b style="color:#94a3b8;">日系空亡</b>：落在【${advancedData.kongWang.join('、')}】位，能量減弱，不可全信。</span>
+          </div>` : ''}
       </div>
-    ` : '';
-
-    legendHTML = `<div class="direction-legend">${escapePart}${stemPart}${advancedPart}</div>`;
-  }
+    </div>
+  ` : '';
 
   container.innerHTML = `
+    <!-- 3. 九宮星圖 -->
     <div class="nine-palace-section glass-panel result-area">
       <div class="section-header">
         <span class="section-icon">🧭</span>
-        <h2>九宮方位</h2>
+        <h2>九宮方位圖</h2>
       </div>
       <div class="nine-palace-wrapper">
         ${svgContent}
       </div>
-      ${legendHTML}
     </div>
+
+    <!-- 泊地與警示 (獨立區塊) -->
+    ${escapePart}
+    ${advancedPart}
   `;
+
 
   // 延遲添加可見類
   requestAnimationFrame(() => {
