@@ -227,8 +227,24 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction) {
             <text x="${cx + 5}" y="${stemOffY + 5}" fill="${wxColor}" font-size="14"
               font-family="'Noto Serif TC', serif" font-weight="bold">${s.stem}</text>
           `;
-          offsetY += 24;
+          stemOffY += 22;
         }
+      }
+
+      // ── Zone 3：逃難標籤 ─────────────────────────
+      if (isEscapeHighlight) {
+        svgContent += `
+          <text x="${cx}" y="${zone3Y}" fill="#ffd700"
+            font-size="10.5" text-anchor="middle" font-weight="bold"
+            font-family="'Noto Serif TC', serif" filter="url(#glow)">
+            ${highlight.label}（${highlight.zhi}）
+          </text>
+        `;
+        // 右上角小三角標記
+        svgContent += `
+          <polygon points="${x + cellSize - 16},${y} ${x + cellSize},${y} ${x + cellSize},${y + 16}"
+            fill="#ffd700" opacity="0.5"/>
+        `;
       }
     }
   }
