@@ -8,6 +8,7 @@ import { createNinePalaceGrid } from './components/NinePalaceGrid.js';
 import { createStemRelator } from './components/StemRelator.js';
 import { createEnergyMeter } from './components/EnergyMeter.js';
 import { createResultPanel } from './components/ResultPanel.js';
+import { createMasterVerdictPanel } from './components/MasterVerdictPanel.js';
 
 import { getMonthGeneral } from './engine/monthGeneral.js';
 import { getFourPillars } from './engine/stemBranch.js';
@@ -15,12 +16,14 @@ import { getEscapeDirections } from './engine/directions.js';
 import { assessPillarInteraction } from './engine/stemRelation.js';
 import { evaluateEnergy } from './engine/wuxing.js';
 import { getKongWang, isJieLuKongWang, getNoblemanBranches } from './engine/constants.js';
+import { generateMasterVerdict } from './engine/masterVerdict.js';
 
 // 容器
 const inputContainer = document.getElementById('input-area');
 const palaceContainer = document.getElementById('palace-area');
 const stemContainer = document.getElementById('stem-area');
 const energyContainer = document.getElementById('energy-area');
+const verdictContainer = document.getElementById('master-verdict-area');
 const resultContainer = document.getElementById('result-area');
 
 // 初始化輸入元件
@@ -62,6 +65,14 @@ function onCalculate(date) {
       noblemen
     };
 
+    // 7. 生成大師總評
+    const masterVerdict = generateMasterVerdict(
+      stemInteraction,
+      energyResult,
+      advancedData,
+      escapeDirections
+    );
+
     // 渲染結果 (帶交錯動畫)
     createNinePalaceGrid(palaceContainer, escapeDirections, stemInteraction, advancedData);
 
@@ -74,12 +85,16 @@ function onCalculate(date) {
     }, 300);
 
     setTimeout(() => {
+      createMasterVerdictPanel(verdictContainer, masterVerdict);
+    }, 450);
+
+    setTimeout(() => {
       createResultPanel(resultContainer, {
         fourPillars,
         monthGeneralInfo,
         date,
       });
-    }, 450);
+    }, 600);
 
     // 滾動到結果
     setTimeout(() => {
