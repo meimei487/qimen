@@ -1,15 +1,9 @@
 /**
- * 九宮格方位圖 SVG 元件
+ * 九宮格方位圖及其附屬面板元件
  */
 
 import { NINE_PALACES, ZHI_TO_PALACE, PALACE_DIRECTIONS } from '../engine/constants.js';
 
-/**
- * 九宮格佈局 (洛書排列):
- *   巽(4) | 離(9) | 坤(2)
- *   震(3) | 中(5) | 兌(7)
- *   艮(8) | 坎(1) | 乾(6)
- */
 const GRID_LAYOUT = [
   ['巽宮', '離宮', '坤宮'],
   ['震宮', '中宮', '兌宮'],
@@ -28,13 +22,12 @@ const PALACE_WUXING_LABELS = {
   '艮宮': '土', '坎宮': '水', '乾宮': '金',
 };
 
-// 生剋關係顏色
 const RELATION_COLORS = {
-  generate:  '#4ade80', // 時生日 — 綠
-  generated: '#fbbf24', // 日生時 — 黃
-  overcome:  '#ef4444', // 時剋日 — 紅
-  overcomed: '#60a5fa', // 日剋時 — 藍
-  same:      '#94a3b8', // 比和   — 灰
+  generate:  '#4ade80',
+  generated: '#fbbf24',
+  overcome:  '#ef4444',
+  overcomed: '#60a5fa',
+  same:      '#94a3b8',
 };
 
 const RELATION_LABELS = {
@@ -50,24 +43,103 @@ function getWuxingColor(wuxing) {
   return colors[wuxing] || '#94a3b8';
 }
 
-export function createNinePalaceGrid(container, escapeData, stemInteraction, advancedData = {}) {
-  // escapeData = { taiChong, xiaoJi, congKui, allDirections }
-  // stemInteraction = { relation, dayInfo: { palace, stem, wuxing }, hourInfo: { palace, stem, wuxing } }
+// ---------------------------------------------------------
+// 第二步：特殊禁忌 (截路空亡)
+// ---------------------------------------------------------
+export function createWarningPanel(container, advancedData) {
+  if (!advancedData.isJieLu) {
+    container.innerHTML = ''; // 沒有則隱藏
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="legend-group glass-panel result-area" style="border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+       <div class="legend-title" style="color: #f87171; font-weight: 900; letter-spacing: 0.1em;">
+         <span class="legend-icon">🛑</span> 特殊重大禁忌 (時辰大忌)
+       </div>
+       <div style="margin-top: 10px; color: #fca5a5; font-size: 1.05rem; line-height: 1.6;">
+          <b>截路空亡</b>：此時辰辦事極易遇阻或徒勞無功。<b>逢此大忌，宜守不宜動。</b>
+       </div>
+    </div>
+  `;
+  requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
+}
 
+// ---------------------------------------------------------
+// 第三步：泊地方位 (出口)
+// ---------------------------------------------------------
+export function createEscapePanel(container, escapeData) {
+  if (!escapeData) return;
+  
+  container.innerHTML = `
+    <div class="legend-group glass-panel result-area">
+      <div class="section-header">
+        <span class="section-icon">📍</span>
+        <h2>泊地吉方 (天門三泊)</h2>
+      </div>
+      <div class="legend-items" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 5px;">
+        <div class="legend-item taichong" style="background: rgba(255,215,0,0.06); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);">
+          <span class="legend-label"><b>太沖 (卯)</b><br/>&rarr; <span style="color:#ffd700; font-size: 1.2rem; font-weight: 900;">${escapeData.taiChong?.direction || '—'}</span></span>
+        </div>
+        <div class="legend-item xiaoji" style="background: rgba(96,165,250,0.06); padding: 12px; border-radius: 8px; border: 1px solid rgba(96,165,250,0.15);">
+          <span class="legend-label"><b>小吉 (未)</b><br/>&rarr; <span style="color:#60a5fa; font-size: 1.2rem; font-weight: 900;">${escapeData.xiaoJi?.direction || '—'}</span></span>
+        </div>
+        <div class="legend-item congkui" style="background: rgba(192,132,252,0.06); padding: 12px; border-radius: 8px; border: 1px solid rgba(192,132,252,0.15);">
+          <span class="legend-label"><b>從魁 (酉)</b><br/>&rarr; <span style="color:#c084fc; font-size: 1.2rem; font-weight: 900;">${escapeData.congKui?.direction || '—'}</span></span>
+        </div>
+      </div>
+    </div>
+  `;
+  requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
+}
+
+// ---------------------------------------------------------
+// 第五步：貴人與空亡 (細項診斷)
+// ---------------------------------------------------------
+export function createStatusPanel(container, advancedData) {
+  const { kongWang, noblemen } = advancedData;
+  const noblePalaces = noblemen.map(b => ZHI_TO_PALACE[b]);
+  
+  container.innerHTML = `
+    <div class="legend-group glass-panel result-area">
+      <div class="section-header">
+        <span class="section-icon">🌫️</span>
+        <h2>神效診斷 (貴人與空亡)</h2>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border-subtle);">
+          <div style="color: #94a3b8; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🌫️</span> 日系空亡 (地雷區)
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.92rem;">
+            本局空亡：<b>${kongWang.join('、')}</b>。落此方位之事多虛假無力。
+          </div>
+        </div>
+        <div style="background: rgba(168,85,247,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(168,85,247,0.2);">
+          <div style="color: #a855f7; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">✨</span> 天乙貴人 (靠山方位)
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.92rem;">
+            本時辰貴人：<b>${noblePalaces.join('、')}</b>。此方最利求人辦事。
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
+}
+
+// ---------------------------------------------------------
+// 第六步：九宮方位圖 (SVG)
+// ---------------------------------------------------------
+export function createNinePalaceGrid(container, escapeData, stemInteraction, advancedData = {}) {
   const highlightPalaces = {};
   if (escapeData) {
-    if (escapeData.taiChong) {
-      highlightPalaces[escapeData.taiChong.palace] = { label: '太沖', zhi: '卯', type: 'escape' };
-    }
-    if (escapeData.xiaoJi) {
-      highlightPalaces[escapeData.xiaoJi.palace] = { label: '小吉', zhi: '未', type: 'escape' };
-    }
-    if (escapeData.congKui) {
-      highlightPalaces[escapeData.congKui.palace] = { label: '從魁', zhi: '酉', type: 'escape' };
-    }
+    if (escapeData.taiChong) highlightPalaces[escapeData.taiChong.palace] = { label: '太沖', zhi: '卯' };
+    if (escapeData.xiaoJi) highlightPalaces[escapeData.xiaoJi.palace] = { label: '小吉', zhi: '未' };
+    if (escapeData.congKui) highlightPalaces[escapeData.congKui.palace] = { label: '從魁', zhi: '酉' };
   }
 
-  // 日干 / 時干 宮位標記
   const stemPalaces = {};
   let relationColor = '#94a3b8';
   let relationLabel = '';
@@ -75,7 +147,6 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
     const { relation, dayInfo, hourInfo } = stemInteraction;
     relationColor = RELATION_COLORS[relation] || '#94a3b8';
     relationLabel = RELATION_LABELS[relation] || '';
-
     if (dayInfo?.palace) {
       stemPalaces[dayInfo.palace] = stemPalaces[dayInfo.palace] || [];
       stemPalaces[dayInfo.palace].push({ stem: dayInfo.stem, wuxing: dayInfo.wuxing, role: 'day' });
@@ -92,39 +163,15 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
   const totalSize = cellSize * 3 + gap * 2 + padding * 2;
 
   let svgContent = `
-    <svg viewBox="0 0 ${totalSize} ${totalSize}" xmlns="http://www.w3.org/2000/svg" class="nine-palace-svg" role="img" aria-label="九宮格方位圖">
+    <svg viewBox="0 0 ${totalSize} ${totalSize}" xmlns="http://www.w3.org/2000/svg" class="nine-palace-svg">
       <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <filter id="glow-strong">
-          <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#ff8c00;stop-opacity:1" />
-        </linearGradient>
-        <marker id="rel-arrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto">
-          <polygon points="0 0, 6 2.5, 0 5" fill="${relationColor}" opacity="0.8"/>
-        </marker>
-        <!-- 🌀 空亡斜紋圖案 -->
-        <pattern id="void-pattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="10" stroke="rgba(255,255,255,0.06)" stroke-width="4" />
-        </pattern>
+        <filter id="glow"><feGaussianBlur stdDeviation="4" result="c"/><feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <marker id="arrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 6 2.5, 0 5" fill="${relationColor}"/></marker>
+        <pattern id="void" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(255,255,255,0.06)" stroke-width="4" /></pattern>
       </defs>
   `;
 
-  // 收集宮位中心座標，用於畫連線
   const palaceCenters = {};
-
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const palace = GRID_LAYOUT[row][col];
@@ -134,254 +181,53 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
       const cy = y + cellSize / 2;
       palaceCenters[palace] = { cx, cy };
 
-      const direction = PALACE_DIRECTIONS[palace];
-      const wuxing = PALACE_WUXING_LABELS[palace];
-      const color = PALACE_COLORS[palace];
-      const highlight = highlightPalaces[palace];
-      const isEscapeHighlight = !!highlight;
-      const stemArr = stemPalaces[palace] || [];
-      const hasStem = stemArr.length > 0;
-      const hasDay = stemArr.some(s => s.role === 'day');
-      const hasHour = stemArr.some(s => s.role === 'hour');
-      const hasBoth = hasDay && hasHour;
-
-      // 進階斷法徽章檢查
       const isKongWang = advancedData.kongWang?.some(b => ZHI_TO_PALACE[b] === palace);
       const isNobleman = advancedData.noblemen?.some(b => ZHI_TO_PALACE[b] === palace);
-
-      // ── 三個固定垂直區塊 ──────────────────────────
-      //  zone1 (宮名)   ~ 35% 高
-      //  zone2 (干名)   ~ 58% 高（中部）
-      //  zone3 (逃難)   ~ 80% 高（底部）
-      const zone1Y = y + cellSize * 0.36;
-      const zone2Y = y + cellSize * 0.58;
-      const zone3Y = y + cellSize * 0.80;
-
-      // 邊框色優先級（逃難金 > 日藍 > 時紅 > 預設）
-      let strokeColor = 'rgba(255,255,255,0.1)';
-      let strokeWidth = 1;
-      let fillColor = 'rgba(255,255,255,0.05)';
-      let useGlow = false;
-
-      if (isKongWang) {
-        fillColor = 'rgba(100,116,139,0.12)'; 
-        strokeColor = 'rgba(100,116,139,0.3)';
-        useGlow = false;
-      }
-
-      if (isEscapeHighlight) {
-        strokeColor = '#ffd700'; strokeWidth = 2.5;
-        fillColor = isKongWang ? 'rgba(255,215,0,0.05)' : 'rgba(255,215,0,0.10)'; 
-        useGlow = true;
-      }
-      if (hasBoth) {
-        strokeColor = relationColor; strokeWidth = 2.5;
-        fillColor = `${relationColor}18`; useGlow = true;
-      } else if (hasDay) {
-        strokeColor = '#60a5fa'; strokeWidth = 2;
-        fillColor = 'rgba(96,165,250,0.07)'; useGlow = true;
-      } else if (hasHour) {
-        strokeColor = '#f87171'; strokeWidth = 2;
-        fillColor = 'rgba(248,113,113,0.07)'; useGlow = true;
-      }
-
-      // 背景矩形
-      svgContent += `
-        <rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9"
-          fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
-          ${useGlow ? 'filter="url(#glow)"' : ''}
-          class="palace-cell ${isEscapeHighlight ? 'palace-highlighted' : ''} ${isKongWang ? 'palace-void' : ''}"
-        />
-        ${isKongWang ? `
-          <rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9"
-            fill="url(#void-pattern)" opacity="0.6" pointer-events="none" />
-        ` : ''}
-      `;
-
-      // 內容群組 (若空亡則半透明)
-      svgContent += `<g style="opacity: ${isKongWang ? 0.45 : 1};">`;
-
-      // 方位名（左上角，小字）
-      svgContent += `
-        <text x="${x + 8}" y="${y + 16}" fill="rgba(255,255,255,0.38)" font-size="10" font-family="Inter, sans-serif">
-          ${direction}
-        </text>
-      `;
-
-      // 空亡徽章
-      if (isKongWang) {
-        svgContent += `
-          <circle cx="${x + cellSize - 18}" cy="${y + 16}" r="9" fill="rgba(100,116,139,0.9)" />
-          <text x="${x + cellSize - 18}" y="${y + 19.5}" fill="#fff" font-size="9" text-anchor="middle" font-family="'Noto Serif TC', serif" font-weight="bold">空</text>
-        `;
-      }
+      const highlight = highlightPalaces[palace];
+      const sArr = stemPalaces[palace] || [];
       
-      // 貴人徽章
-      if (isNobleman) {
-        // 如果有空亡徽章，往左移
-        const badgeX = isKongWang ? x + cellSize - 40 : x + cellSize - 18;
-        svgContent += `
-          <circle cx="${badgeX}" cy="${y + 16}" r="9" fill="rgba(168,85,247,0.9)" />
-          <text x="${badgeX}" y="${y + 19.5}" fill="#fff" font-size="9" text-anchor="middle" font-family="'Noto Serif TC', serif" font-weight="bold">貴</text>
-        `;
-      }
+      let stroke = 'rgba(255,255,255,0.1)'; let fill = 'rgba(255,255,255,0.05)'; let glow = false;
+      if (isKongWang) { fill = 'rgba(100,116,139,0.12)'; stroke = 'rgba(100,116,139,0.3)'; }
+      if (highlight) { stroke = '#ffd700'; fill = isKongWang ? 'rgba(255,215,0,0.05)' : 'rgba(255,215,0,0.1)'; glow = true; }
+      if (sArr.length > 1) { stroke = relationColor; fill = `${relationColor}1a`; glow = true; }
 
-      // 五行標籤（右下角）
-      svgContent += `
-        <text x="${x + cellSize - 9}" y="${y + cellSize - 8}" fill="${color}" font-size="12"
-          text-anchor="end" font-family="'Noto Serif TC', serif" opacity="0.55">
-          ${wuxing}
-        </text>
-      `;
-
-      // ── Zone 1：宮名 ──────────────────────────────
-      svgContent += `
-        <text x="${cx}" y="${zone1Y}" fill="${isEscapeHighlight ? '#ffd700' : 'rgba(255,255,255,0.88)'}"
-          font-size="18" font-weight="${isEscapeHighlight || hasStem ? 'bold' : 'normal'}"
-          text-anchor="middle" font-family="'Noto Serif TC', serif"
-          ${isEscapeHighlight ? 'filter="url(#glow)"' : ''}>
-          ${palace.replace('宮', '')}
-        </text>
-      `;
-
-      // ── Zone 2：干名膠囊 ──────────────────────────
-      if (hasStem) {
-        const capsuleW = 60;
-        const capsuleH = 19;
-        let stemOffY = zone2Y;
-        for (const s of stemArr) {
-          const roleColor = s.role === 'day' ? '#93c5fd' : '#fca5a5';
-          const roleLabel = s.role === 'day' ? '日' : '時';
-          const wxColor = getWuxingColor(s.wuxing);
-          svgContent += `
-            <rect x="${cx - capsuleW / 2}" y="${stemOffY - capsuleH / 2}" width="${capsuleW}" height="${capsuleH}" rx="10"
-              fill="${roleColor}1a" stroke="${roleColor}" stroke-width="0.9"/>
-            <text x="${cx - capsuleW / 2 + 8}" y="${stemOffY + 4.5}" fill="${roleColor}" font-size="9.5"
-              font-family="'Noto Serif TC', serif" font-weight="600">${roleLabel}干</text>
-            <text x="${cx + 5}" y="${stemOffY + 5}" fill="${wxColor}" font-size="14"
-              font-family="'Noto Serif TC', serif" font-weight="bold">${s.stem}</text>
-          `;
-          stemOffY += 22;
-        }
-      }
-
-      // ── Zone 3：逃難標籤 ─────────────────────────
-      if (isEscapeHighlight) {
-        svgContent += `
-          <text x="${cx}" y="${zone3Y}" fill="#ffd700"
-            font-size="10.5" text-anchor="middle" font-weight="bold"
-            font-family="'Noto Serif TC', serif" filter="url(#glow)">
-            ${highlight.label}（${highlight.zhi}）
-          </text>
-        `;
-        // 右上角小三角標記
-        svgContent += `
-          <polygon points="${x + cellSize - 16},${y} ${x + cellSize},${y} ${x + cellSize},${y + 16}"
-            fill="#ffd700" opacity="0.5"/>
-        `;
-      }
-
-      svgContent += `</g>`; // 關閉內容群組
+      svgContent += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="${glow?2.5:1}" ${glow?'filter="url(#glow)"':''} />`;
+      if (isKongWang) svgContent += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9" fill="url(#void)" opacity="0.6" />`;
+      
+      svgContent += `<g style="opacity:${isKongWang?0.45:1}">`;
+      svgContent += `<text x="${x+8}" y="${y+16}" fill="rgba(255,255,255,0.3)" font-size="10">${PALACE_DIRECTIONS[palace]}</text>`;
+      if (isKongWang) svgContent += `<circle cx="${x+cellSize-18}" cy="${y+16}" r="9" fill="rgba(100,116,139,0.9)" /><text x="${x+cellSize-18}" y="${y+19.5}" fill="#fff" font-size="9" text-anchor="middle">空</text>`;
+      if (isNobleman) { const bX = isKongWang ? x+cellSize-40 : x+cellSize-18; svgContent += `<circle cx="${bX}" cy="${y+16}" r="9" fill="rgba(168,85,247,0.8)" /><text x="${bX}" y="${y+19.5}" fill="#fff" font-size="9" text-anchor="middle">貴</text>`; }
+      svgContent += `<text x="${x+cellSize-9}" y="${y+cellSize-8}" fill="${PALACE_COLORS[palace]}" font-size="12" text-anchor="end" opacity="0.5">${PALACE_WUXING_LABELS[palace]}</text>`;
+      svgContent += `<text x="${cx}" y="${y+cellSize*0.36}" fill="rgba(255,255,255,0.8)" font-size="18" text-anchor="middle">${palace.replace('宮','')}</text>`;
+      
+      let sY = y + cellSize * 0.58;
+      sArr.forEach(s => {
+        const rC = s.role === 'day' ? '#93c5fd' : '#fca5a5';
+        svgContent += `<rect x="${cx-30}" y="${sY-9.5}" width="60" height="19" rx="10" fill="${rC}1a" stroke="${rC}" stroke-width="0.8" />
+                       <text x="${cx-22}" y="${sY+4.5}" fill="${rC}" font-size="9">${s.role==='day'?'日':'時'}干</text>
+                       <text x="${cx+5}" y="${sY+5}" fill="${getWuxingColor(s.wuxing)}" font-size="14" font-weight="bold">${s.stem}</text>`;
+        sY += 22;
+      });
+      if (highlight) svgContent += `<text x="${cx}" y="${y+cellSize*0.82}" fill="#ffd700" font-size="10.5" text-anchor="middle" font-weight="bold">${highlight.label}</text>`;
+      svgContent += `</g>`;
     }
   }
 
-  // 畫日干→時干連線（不同宮時）
   if (stemInteraction) {
     const { dayInfo, hourInfo, relation } = stemInteraction;
-    const dayPalace = dayInfo?.palace;
-    const hourPalace = hourInfo?.palace;
-    if (dayPalace && hourPalace && dayPalace !== hourPalace) {
-      const dc = palaceCenters[dayPalace];
-      const hc = palaceCenters[hourPalace];
-      if (dc && hc) {
-        const fromC = (relation === 'generate' || relation === 'overcome') ? hc : dc;
-        const toC   = (relation === 'generate' || relation === 'overcome') ? dc : hc;
-
-        svgContent += `
-          <line x1="${fromC.cx}" y1="${fromC.cy}" x2="${toC.cx}" y2="${toC.cy}"
-            stroke="${relationColor}" stroke-width="1.8" stroke-dasharray="5,4" opacity="0.7"
-            marker-end="url(#rel-arrow)"/>
-        `;
-
-        const midX = (fromC.cx + toC.cx) / 2;
-        const midY = (fromC.cy + toC.cy) / 2;
-        svgContent += `
-          <circle cx="${midX}" cy="${midY}" r="12" fill="rgba(10,14,26,0.85)" stroke="${relationColor}" stroke-width="1.2"/>
-          <text x="${midX}" y="${midY + 5}" text-anchor="middle" fill="${relationColor}"
-            font-size="13" font-weight="bold" font-family="'Noto Serif TC', serif">
-            ${relationLabel}
-          </text>
-        `;
-      }
+    const a = hourInfo?.palace; const b = dayInfo?.palace;
+    if (a && b && a !== b) {
+      const c1 = palaceCenters[a]; const c2 = palaceCenters[b];
+      const start = (relation==='generate'||relation==='overcome') ? c1 : c2;
+      const end = (relation==='generate'||relation==='overcome') ? c2 : c1;
+      svgContent += `<line x1="${start.cx}" y1="${start.cy}" x2="${end.cx}" y2="${end.cy}" stroke="${relationColor}" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#arrow)"/>`;
+      svgContent += `<circle cx="${(start.cx+end.cx)/2}" cy="${(start.cy+end.cy)/2}" r="12" fill="#080c18" stroke="${relationColor}" />
+                     <text x="${(start.cx+end.cx)/2}" y="${(start.cy+end.cy)/2+5}" text-anchor="middle" fill="${relationColor}" font-size="13">${RELATION_LABELS[relation]}</text>`;
     }
-  }
-
-  // 中宮太極（未被佔用時）
-  const midCenter = palaceCenters['中宮'];
-  if (midCenter && !stemPalaces['中宮']?.length && !highlightPalaces['中宮']) {
-    const { cx, cy } = midCenter;
-    svgContent += `
-      <circle cx="${cx}" cy="${cy + 6}" r="16" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
-      <path d="M ${cx} ${cy - 10} A 8 8 0 0 1 ${cx} ${cy + 22} A 16 16 0 0 1 ${cx} ${cy - 10}" fill="rgba(255,255,255,0.07)"/>
-    `;
   }
 
   svgContent += '</svg>';
-
-  // 建立獨立的區塊 HTML
-  const escapePart = escapeData ? `
-    <div class="legend-group glass-panel result-area" style="margin-top: 16px;">
-      <div class="legend-title"><span class="legend-icon" style="color:#ffd700">📍</span> 泊地吉方 (天門三泊)</div>
-      <div class="legend-items">
-        <div class="legend-item taichong"><span class="legend-dot"></span><span>太沖（卯）&rarr; <b style="color:#ffd700">${escapeData.taiChong?.direction || '—'}</b></span></div>
-        <div class="legend-item xiaoji"><span class="legend-dot"></span><span>小吉（未）&rarr; <b style="color:#60a5fa">${escapeData.xiaoJi?.direction || '—'}</b></span></div>
-        <div class="legend-item congkui"><span class="legend-dot"></span><span>從魁（酉）&rarr; <b style="color:#c084fc">${escapeData.congKui?.direction || '—'}</b></span></div>
-      </div>
-    </div>
-  ` : '';
-
-  const advancedPart = (advancedData.isJieLu || advancedData.kongWang?.length) ? `
-    <div class="legend-group glass-panel result-area" style="margin-top: 16px; border-left: 4px solid #f87171;">
-      <div class="legend-title" style="color: #f87171;"><span class="legend-icon">⚠️</span> 特殊星曜警示</div>
-      <div class="legend-items" style="font-size: 0.95em;">
-        ${advancedData.isJieLu ? `
-          <div style="margin-bottom:8px; background: rgba(239, 68, 68, 0.08); padding: 10px; border-radius: 8px;">
-            <span style="color:#ef4444;font-weight:bold;">🛑 截路空亡</span>：此時辰出行辦事易遇阻礙，建議守成。
-          </div>` : ''}
-        ${advancedData.kongWang?.length ? `
-          <div style="display:flex; align-items:flex-start; gap:8px; padding: 0 5px;">
-            <span style="font-size:1.2rem">🌫️</span>
-            <span><b style="color:#94a3b8;">日系空亡</b>：落在【${advancedData.kongWang.join('、')}】位，能量減弱，不可全信。</span>
-          </div>` : ''}
-      </div>
-    </div>
-  ` : '';
-
-  container.innerHTML = `
-    <!-- 3. 九宮星圖 -->
-    <div class="nine-palace-section glass-panel result-area">
-      <div class="section-header">
-        <span class="section-icon">🧭</span>
-        <h2>九宮方位圖</h2>
-      </div>
-      <div class="nine-palace-wrapper">
-        ${svgContent}
-      </div>
-    </div>
-
-    <!-- 泊地與警示 (獨立區塊) -->
-    ${escapePart}
-    ${advancedPart}
-  `;
-
-
-  // 延遲添加可見類 (確保所有獨立區塊都能顯示)
-  requestAnimationFrame(() => {
-    const blocks = container.querySelectorAll('.result-area');
-    blocks.forEach((block, index) => {
-      setTimeout(() => {
-        block.classList.add('visible');
-      }, index * 120); // 稍微錯開，進步感更強
-    });
-  });
+  container.innerHTML = `<div class="glass-panel result-area"><div class="section-header"><span class="section-icon">🧭</span><h2>九宮方位星圖</h2></div><div class="nine-palace-wrapper">${svgContent}</div></div>`;
+  requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
 }

@@ -19,93 +19,83 @@ import { getKongWang, isJieLuKongWang, getNoblemanBranches } from './engine/cons
 import { generateMasterVerdict } from './engine/masterVerdict.js';
 
 // 容器
-const inputContainer = document.getElementById('input-area');
-const palaceContainer = document.getElementById('palace-area');
-const stemContainer = document.getElementById('stem-area');
-const energyContainer = document.getElementById('energy-area');
-const verdictContainer = document.getElementById('master-verdict-area');
-const resultContainer = document.getElementById('result-area');
+const inputArea = document.getElementById('input-area');
+const energyArea = document.getElementById('energy-area');
+const warningArea = document.getElementById('warning-area');
+const escapeArea = document.getElementById('escape-area');
+const stemArea = document.getElementById('stem-area');
+const statusArea = document.getElementById('status-area');
+const palaceArea = document.getElementById('palace-area');
+const verdictArea = document.getElementById('master-verdict-area');
+const resultArea = document.getElementById('result-area');
 
 // 初始化輸入元件
-createDateTimeInput(inputContainer, onCalculate);
+createDateTimeInput(inputArea, onCalculate);
 
 /**
  * 主計算函式 — 當使用者點擊「開始占卜」時觸發
  */
 function onCalculate(date) {
   try {
-    // 1. 計算四柱干支
     const fourPillars = getFourPillars(date);
-
-    // 2. 計算月將
     const monthGeneralInfo = getMonthGeneral(date);
-
-    // 3. 計算方位 (月將加時)
     const hourBranch = fourPillars.hour.branch;
     const escapeDirections = getEscapeDirections(monthGeneralInfo.monthGeneral, hourBranch);
-
-    // 4. 日時生剋與地支互動
     const stemInteraction = assessPillarInteraction(fourPillars.day, fourPillars.hour);
-
-    // 5. 五星能量
-    const energyResult = evaluateEnergy(
-      fourPillars.day.stem,
-      fourPillars.hour.stem,
-      monthGeneralInfo.lunarMonth
-    );
-
-    // 6. 進階斷法 (空亡、截路空亡、天乙貴人)
+    const energyResult = evaluateEnergy(fourPillars.day.stem, fourPillars.hour.stem, monthGeneralInfo.lunarMonth);
     const kongWang = getKongWang(fourPillars.day.stem, fourPillars.day.branch);
     const isJieLu = isJieLuKongWang(fourPillars.day.stem, hourBranch);
     const noblemen = getNoblemanBranches(fourPillars.day.stem);
 
-    const advancedData = {
-      kongWang,
-      isJieLu,
-      noblemen
-    };
+    const advancedData = { kongWang, isJieLu, noblemen };
+    const masterVerdict = generateMasterVerdict(stemInteraction, energyResult, advancedData, escapeDirections);
 
-    // 7. 生成大師總評
-    const masterVerdict = generateMasterVerdict(
-      stemInteraction,
-      energyResult,
-      advancedData,
-      escapeDirections
-    );
-
-    // 渲染結果 (按瀑布流步進載入)
+    // ---------------------------------------------------------
+    // 渲染 8 大步驟 (瀑布流步進)
+    // ---------------------------------------------------------
+    
     // 1. 五行能量 (氣數)
-    createEnergyMeter(energyContainer, energyResult);
+    createEnergyMeter(energyArea, energyResult);
 
-    // 2. 日時生剋 (主客關係)
+    // 2. 特殊禁忌 (地雷)
     setTimeout(() => {
-      createStemRelator(stemContainer, stemInteraction);
-    }, 200);
+      import('./components/NinePalaceGrid.js').then(m => m.createWarningPanel(warningArea, advancedData));
+    }, 150);
 
-    // 3. 九宮方位 (圖表圖例)
+    // 3. 泊地方位 (出口)
     setTimeout(() => {
-      createNinePalaceGrid(palaceContainer, escapeDirections, stemInteraction, advancedData);
+      import('./components/NinePalaceGrid.js').then(m => m.createEscapePanel(escapeArea, escapeDirections));
+    }, 300);
+
+    // 4. 日時生剋 (關係)
+    setTimeout(() => {
+      createStemRelator(stemArea, stemInteraction);
     }, 450);
 
-    // 4. 大師總評 (指點迷津)
+    // 5. 貴人/空亡 (診斷)
     setTimeout(() => {
-      createMasterVerdictPanel(verdictContainer, masterVerdict);
-    }, 700);
+      import('./components/NinePalaceGrid.js').then(m => m.createStatusPanel(statusArea, advancedData));
+    }, 600);
 
-    // 5. 詳細資訊 (四柱數據)
+    // 6. 九宮星圖 (地圖)
     setTimeout(() => {
-      createResultPanel(resultContainer, {
-        fourPillars,
-        monthGeneralInfo,
-        date,
-      });
+      createNinePalaceGrid(palaceArea, escapeDirections, stemInteraction, advancedData);
+    }, 750);
+
+    // 7. 大師總評 (指引)
+    setTimeout(() => {
+      createMasterVerdictPanel(verdictArea, masterVerdict);
     }, 950);
 
-    // 滾動到第一個結果區 (能量區)
+    // 8. 詳細資訊 (數據)
     setTimeout(() => {
-      energyContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+      createResultPanel(resultArea, { fourPillars, monthGeneralInfo, date });
+    }, 1150);
 
+    // 滾動到能量區
+    setTimeout(() => {
+      energyArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 
   } catch (err) {
     console.error('計算錯誤:', err);
