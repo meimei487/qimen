@@ -44,7 +44,7 @@ export function createStemRelator(container, interaction) {
                 <polygon points="0 0, 8 3, 0 6" fill="${colors.border}" />
               </marker>
             </defs>
-            ${interaction.relation === 'generate' || interaction.relation === 'overcomed'
+            ${interaction.relation === 'generate' || interaction.relation === 'overcome'
               ? `<line x1="65" y1="20" x2="15" y2="20" stroke="${colors.border}" stroke-width="2" marker-end="url(#arrowhead)"/>`
               : `<line x1="15" y1="20" x2="65" y2="20" stroke="${colors.border}" stroke-width="2" marker-end="url(#arrowhead)"/>`
             }
