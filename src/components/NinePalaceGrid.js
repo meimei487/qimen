@@ -92,8 +92,8 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction) {
     }
   }
 
-  const cellSize = 120;
-  const padding = 15;
+  const cellSize = 132;
+  const padding = 14;
   const gap = 6;
   const totalSize = cellSize * 3 + gap * 2 + padding * 2;
 
@@ -147,7 +147,15 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction) {
       const hasHour = stemArr.some(s => s.role === 'hour');
       const hasBoth = hasDay && hasHour;
 
-      // 邊框色優先級：逃難方位(金) > 日干(藍) > 時干(紅) > 預設
+      // ── 三個固定垂直區塊 ──────────────────────────
+      //  zone1 (宮名)   ~ 35% 高
+      //  zone2 (干名)   ~ 58% 高（中部）
+      //  zone3 (逃難)   ~ 80% 高（底部）
+      const zone1Y = y + cellSize * 0.36;
+      const zone2Y = y + cellSize * 0.58;
+      const zone3Y = y + cellSize * 0.80;
+
+      // 邊框色優先級（逃難金 > 日藍 > 時紅 > 預設）
       let strokeColor = 'rgba(255,255,255,0.1)';
       let strokeWidth = 1;
       let fillColor = 'rgba(255,255,255,0.05)';
@@ -155,84 +163,68 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction) {
 
       if (isEscapeHighlight) {
         strokeColor = '#ffd700'; strokeWidth = 2.5;
-        fillColor = 'rgba(255,215,0,0.15)'; useGlow = true;
+        fillColor = 'rgba(255,215,0,0.10)'; useGlow = true;
       }
       if (hasBoth) {
         strokeColor = relationColor; strokeWidth = 2.5;
-        fillColor = `${relationColor}22`; useGlow = true;
+        fillColor = `${relationColor}18`; useGlow = true;
       } else if (hasDay) {
         strokeColor = '#60a5fa'; strokeWidth = 2;
-        fillColor = 'rgba(96,165,250,0.08)'; useGlow = true;
+        fillColor = 'rgba(96,165,250,0.07)'; useGlow = true;
       } else if (hasHour) {
         strokeColor = '#f87171'; strokeWidth = 2;
-        fillColor = 'rgba(248,113,113,0.08)'; useGlow = true;
+        fillColor = 'rgba(248,113,113,0.07)'; useGlow = true;
       }
 
       // 背景矩形
       svgContent += `
-        <rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="8"
+        <rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9"
           fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
           ${useGlow ? 'filter="url(#glow)"' : ''}
           class="palace-cell ${isEscapeHighlight ? 'palace-highlighted' : ''}"
         />
       `;
 
-      // 方位名（左上角）
+      // 方位名（左上角，小字）
       svgContent += `
-        <text x="${x + 8}" y="${y + 17}" fill="rgba(255,255,255,0.45)" font-size="11" font-family="Inter, sans-serif">
+        <text x="${x + 8}" y="${y + 16}" fill="rgba(255,255,255,0.38)" font-size="10" font-family="Inter, sans-serif">
           ${direction}
         </text>
       `;
 
-      // 宮名（有干名時上移）
-      const palaceNameY = hasStem ? cy - 22 : cy + 5;
+      // 五行標籤（右下角）
       svgContent += `
-        <text x="${cx}" y="${palaceNameY}" fill="${isEscapeHighlight ? '#ffd700' : 'rgba(255,255,255,0.85)'}"
-          font-size="${isEscapeHighlight ? 18 : 16}" font-weight="${isEscapeHighlight || hasStem ? 'bold' : 'normal'}"
+        <text x="${x + cellSize - 9}" y="${y + cellSize - 8}" fill="${color}" font-size="12"
+          text-anchor="end" font-family="'Noto Serif TC', serif" opacity="0.55">
+          ${wuxing}
+        </text>
+      `;
+
+      // ── Zone 1：宮名 ──────────────────────────────
+      svgContent += `
+        <text x="${cx}" y="${zone1Y}" fill="${isEscapeHighlight ? '#ffd700' : 'rgba(255,255,255,0.88)'}"
+          font-size="18" font-weight="${isEscapeHighlight || hasStem ? 'bold' : 'normal'}"
           text-anchor="middle" font-family="'Noto Serif TC', serif"
           ${isEscapeHighlight ? 'filter="url(#glow)"' : ''}>
           ${palace.replace('宮', '')}
         </text>
       `;
 
-      // 五行標籤（右下角）
-      svgContent += `
-        <text x="${x + cellSize - 10}" y="${y + cellSize - 10}" fill="${color}" font-size="13"
-          text-anchor="end" font-family="'Noto Serif TC', serif" opacity="0.65">
-          ${wuxing}
-        </text>
-      `;
-
-      // 逃難方位標記
-      if (isEscapeHighlight) {
-        svgContent += `
-          <text x="${cx}" y="${cy + 14}" fill="#ffd700"
-            font-size="11" text-anchor="middle" font-weight="bold"
-            font-family="'Noto Serif TC', serif" filter="url(#glow)">
-            ${highlight.label}（${highlight.zhi}）
-          </text>
-        `;
-        svgContent += `
-          <polygon points="${x + cellSize - 18},${y} ${x + cellSize},${y} ${x + cellSize},${y + 18}"
-            fill="#ffd700" opacity="0.55"/>
-        `;
-      }
-
-      // 日干 / 時干 膠囊標記
+      // ── Zone 2：干名膠囊 ──────────────────────────
       if (hasStem) {
-        let offsetY = cy + 4;
+        const capsuleW = 60;
+        const capsuleH = 19;
+        let stemOffY = zone2Y;
         for (const s of stemArr) {
           const roleColor = s.role === 'day' ? '#93c5fd' : '#fca5a5';
           const roleLabel = s.role === 'day' ? '日' : '時';
           const wxColor = getWuxingColor(s.wuxing);
-          const capsuleW = 62;
-          const capsuleH = 20;
           svgContent += `
-            <rect x="${cx - capsuleW / 2}" y="${offsetY - 13}" width="${capsuleW}" height="${capsuleH}" rx="10"
-              fill="${roleColor}22" stroke="${roleColor}" stroke-width="1"/>
-            <text x="${cx - capsuleW / 2 + 9}" y="${offsetY}" fill="${roleColor}" font-size="10"
+            <rect x="${cx - capsuleW / 2}" y="${stemOffY - capsuleH / 2}" width="${capsuleW}" height="${capsuleH}" rx="10"
+              fill="${roleColor}1a" stroke="${roleColor}" stroke-width="0.9"/>
+            <text x="${cx - capsuleW / 2 + 8}" y="${stemOffY + 4.5}" fill="${roleColor}" font-size="9.5"
               font-family="'Noto Serif TC', serif" font-weight="600">${roleLabel}干</text>
-            <text x="${cx + 6}" y="${offsetY}" fill="${wxColor}" font-size="14"
+            <text x="${cx + 5}" y="${stemOffY + 5}" fill="${wxColor}" font-size="14"
               font-family="'Noto Serif TC', serif" font-weight="bold">${s.stem}</text>
           `;
           offsetY += 24;
