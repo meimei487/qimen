@@ -375,8 +375,13 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
   `;
 
 
-  // 延遲添加可見類
+  // 延遲添加可見類 (確保所有獨立區塊都能顯示)
   requestAnimationFrame(() => {
-    container.querySelector('.result-area')?.classList.add('visible');
+    const blocks = container.querySelectorAll('.result-area');
+    blocks.forEach((block, index) => {
+      setTimeout(() => {
+        block.classList.add('visible');
+      }, index * 120); // 稍微錯開，進步感更強
+    });
   });
 }
