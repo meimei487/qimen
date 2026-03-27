@@ -50,13 +50,16 @@ export function createWarningPanel(container, hourBranch, advancedData) {
   const { isJieLu, kongWang } = advancedData;
   const isHourVoid = kongWang?.includes(hourBranch);
   
+  container.innerHTML = ''; // 清空
+  const wrapper = document.createElement('div');
+  wrapper.className = 'legend-group glass-panel result-area';
+  
   if (!isJieLu && !isHourVoid) {
-    container.innerHTML = `
-      <div class="legend-group glass-panel result-area" style="opacity: 0.7; border-left: 5px solid #10b981; background: rgba(16, 185, 129, 0.03);">
-         <div style="color: #6ee7b7; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-           <span style="font-size: 1.2rem;">✅</span> 當前時空無重大「截路」或「空亡」禁忌，可放心依計畫行事。
-         </div>
-      </div>
+    wrapper.style.cssText = 'opacity: 0.7; border-left: 5px solid #10b981; background: rgba(16, 185, 129, 0.03);';
+    wrapper.innerHTML = `
+       <div style="color: #6ee7b7; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+         <span style="font-size: 1.2rem;">✅</span> 當前時空無重大「截路」或「空亡」禁忌，可放心依計畫行事。
+       </div>
     `;
   } else {
     let warningHtml = '';
@@ -73,26 +76,22 @@ export function createWarningPanel(container, hourBranch, advancedData) {
         </div>`;
     }
     
-    container.innerHTML = `
-      <div class="legend-group glass-panel result-area" style="border-left: 5px solid ${isJieLu ? '#ef4444' : '#fbbf24'}; background: rgba(255, 150, 0, 0.05);">
+    wrapper.style.cssText = `border-left: 5px solid ${isJieLu ? '#ef4444' : '#fbbf24'}; background: rgba(255, 150, 0, 0.05);`;
+    wrapper.innerHTML = `
          <div class="legend-title" style="color: ${isJieLu ? '#f87171' : '#fbbf24'}; font-weight: 900; letter-spacing: 0.1em;">
            <span class="legend-icon">⚠️</span> 特殊重大禁忌 (時辰大忌)
          </div>
          <div style="margin-top: 10px;">
            ${warningHtml}
          </div>
-      </div>
     `;
   }
-  requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
+  container.appendChild(wrapper);
+  requestAnimationFrame(() => wrapper.classList.add('visible'));
 }
 
-// ---------------------------------------------------------
-// 第三步：泊地方位 (出口)
-// ---------------------------------------------------------
 export function createEscapePanel(container, escapeData) {
   if (!escapeData) return;
-  
   container.innerHTML = `
     <div class="legend-group glass-panel result-area">
       <div class="section-header">
@@ -115,9 +114,6 @@ export function createEscapePanel(container, escapeData) {
   requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
 }
 
-// ---------------------------------------------------------
-// 第五步：貴人與空亡 (細項診斷)
-// ---------------------------------------------------------
 export function createStatusPanel(container, advancedData) {
   const { kongWang, noblemen } = advancedData;
   const noblePalaces = noblemen.map(b => ZHI_TO_PALACE[b]);
@@ -151,15 +147,12 @@ export function createStatusPanel(container, advancedData) {
   requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
 }
 
-// ---------------------------------------------------------
-// 第六步：九宮方位圖 (SVG)
-// ---------------------------------------------------------
 export function createNinePalaceGrid(container, escapeData, stemInteraction, advancedData = {}) {
   const highlightPalaces = {};
   if (escapeData) {
-    if (escapeData.taiChong) highlightPalaces[escapeData.taiChong.palace] = { label: '太沖', zhi: '卯' };
-    if (escapeData.xiaoJi) highlightPalaces[escapeData.xiaoJi.palace] = { label: '小吉', zhi: '未' };
-    if (escapeData.congKui) highlightPalaces[escapeData.congKui.palace] = { label: '從魁', zhi: '酉' };
+    if (escapeData.taiChong) highlightPalaces[escapeData.taiChong.palace] = { label: '太沖' };
+    if (escapeData.xiaoJi) highlightPalaces[escapeData.xiaoJi.palace] = { label: '小吉' };
+    if (escapeData.congKui) highlightPalaces[escapeData.congKui.palace] = { label: '從魁' };
   }
 
   const stemPalaces = {};
@@ -189,7 +182,7 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
       <defs>
         <filter id="glow"><feGaussianBlur stdDeviation="4" result="c"/><feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <marker id="arrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 6 2.5, 0 5" fill="${relationColor}"/></marker>
-        <pattern id="void" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(255,255,255,0.06)" stroke-width="4" /></pattern>
+        <pattern id="voidPattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(255,255,255,0.06)" stroke-width="4" /></pattern>
       </defs>
   `;
 
@@ -206,47 +199,53 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
       const { kongWang, noblemen, dayStemTombPalace } = advancedData;
       const isKongWang = kongWang?.some(z => ZHI_TO_PALACE[z] === palace);
       const isNobleman = noblemen?.some(z => ZHI_TO_PALACE[z] === palace);
-      const isTomb = dayStemTombPalace === palace; // 只要是日干的墓庫方位就顯示
+      const isTomb = dayStemTombPalace === palace;
       const highlight = highlightPalaces[palace];
       const sArr = stemPalaces[palace] || [];
       
-      let stroke = 'rgba(255,255,255,0.1)'; let fill = 'rgba(255,255,255,0.05)'; let glow = false;
+      let stroke = 'rgba(255,255,255,0.1)'; 
+      let fill = 'rgba(255,255,255,0.05)'; 
+      let glow = false;
+
       if (isKongWang) { fill = 'rgba(100,116,139,0.12)'; stroke = 'rgba(100,116,139,0.3)'; }
       if (highlight) { stroke = '#ffd700'; fill = isKongWang ? 'rgba(255,215,0,0.05)' : 'rgba(255,215,0,0.1)'; glow = true; }
       if (sArr.length > 1) { stroke = relationColor; fill = `${relationColor}1a`; glow = true; }
 
       svgContent += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="${glow?2.5:1}" ${glow?'filter="url(#glow)"':''} />`;
-      if (isKongWang) svgContent += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9" fill="url(#void)" opacity="0.6" />`;
+      if (isKongWang) svgContent += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="9" fill="url(#voidPattern)" opacity="0.6" />`;
       
-      svgContent += `<g style="opacity:${isKongWang?0.45:1}">`;
-      svgContent += `<text x="${x+8}" y="${y+16}" fill="rgba(255,255,255,0.3)" font-size="10">${PALACE_DIRECTIONS[palace]}</text>`;
+      svgContent += `<g style="opacity:${isKongWang?0.45:1}">
+          <text x="${x+8}" y="${y+18}" fill="rgba(255,255,255,0.3)" font-size="10">${PALACE_DIRECTIONS[palace]}</text>`;
       
       let badgeX = x + cellSize - 18;
       if (isKongWang) {
-        svgContent += `<circle cx="${badgeX}" cy="${y+16}" r="9" fill="rgba(100,116,139,0.9)" /><text x="${badgeX}" y="${y+19.5}" fill="#fff" font-size="9" text-anchor="middle">空</text>`;
+        svgContent += `<circle cx="${badgeX}" cy="${y+16}" r="9" fill="rgba(100,116,139,0.9)" /><text x="${badgeX}" y="${y+19}" fill="#fff" font-size="9" text-anchor="middle">空</text>`;
         badgeX -= 22;
       }
       if (isNobleman) {
-        svgContent += `<circle cx="${badgeX}" cy="${y+16}" r="9" fill="rgba(168,85,247,0.8)" /><text x="${badgeX}" y="${y+19.5}" fill="#fff" font-size="9" text-anchor="middle">貴</text>`;
+        svgContent += `<circle cx="${badgeX}" cy="${y+16}" r="9" fill="rgba(168,85,247,0.8)" /><text x="${badgeX}" y="${y+19}" fill="#fff" font-size="9" text-anchor="middle">貴</text>`;
         badgeX -= 22;
       }
       if (isTomb) {
-        svgContent += `<circle cx="${badgeX}" cy="${y+16}" r="9" fill="rgba(88,28,135,0.95)" /><text x="${badgeX}" y="${y+19.5}" fill="#fff" font-size="9" text-anchor="middle">墓</text>`;
+        svgContent += `<circle cx="${badgeX}" cy="${y+16}" r="9" fill="rgba(88,28,135,0.95)" /><text x="${badgeX}" y="${y+19}" fill="#fff" font-size="9" text-anchor="middle">墓</text>`;
         badgeX -= 22;
       }
 
-      svgContent += `<text x="${x+cellSize-9}" y="${y+cellSize-8}" fill="${PALACE_COLORS[palace]}" font-size="12" text-anchor="end" opacity="0.5">${PALACE_WUXING_LABELS[palace]}</text>`;
-      svgContent += `<text x="${cx}" y="${y+cellSize*0.36}" fill="rgba(255,255,255,0.8)" font-size="18" text-anchor="middle">${palace.replace('宮','')}</text>`;
+      svgContent += `<text x="${x+cellSize-9}" y="${y+cellSize-8}" fill="${PALACE_COLORS[palace]}" font-size="12" text-anchor="end" opacity="0.5">${PALACE_WUXING_LABELS[palace]}</text>
+                     <text x="${cx}" y="${y+cellSize*0.42}" fill="rgba(255,255,255,0.8)" font-size="20" text-anchor="middle">${palace.replace('宮','')}</text>`;
       
-      let sY = y + cellSize * 0.58;
+      let sY = y + cellSize * 0.62;
       sArr.forEach(s => {
         const rC = s.role === 'day' ? '#93c5fd' : '#fca5a5';
-        svgContent += `<rect x="${cx-30}" y="${sY-9.5}" width="60" height="19" rx="10" fill="${rC}1a" stroke="${rC}" stroke-width="0.8" />
-                       <text x="${cx-22}" y="${sY+4.5}" fill="${rC}" font-size="9">${s.role==='day'?'日':'時'}干</text>
-                       <text x="${cx+5}" y="${sY+5}" fill="${getWuxingColor(s.wuxing)}" font-size="14" font-weight="bold">${s.stem}</text>`;
+        svgContent += `
+          <g transform="translate(${cx-30}, ${sY-9.5})">
+            <rect x="0" y="0" width="60" height="19" rx="10" fill="${rC}1a" stroke="${rC}" stroke-width="0.8" />
+            <text x="8" y="13" fill="${rC}" font-size="9">${s.role==='day'?'日':'時'}干</text>
+            <text x="35" y="14" fill="${getWuxingColor(s.wuxing)}" font-size="14" font-weight="bold">${s.stem}</text>
+          </g>`;
         sY += 22;
       });
-      if (highlight) svgContent += `<text x="${cx}" y="${y+cellSize*0.82}" fill="#ffd700" font-size="10.5" text-anchor="middle" font-weight="bold">${highlight.label}</text>`;
+      if (highlight) svgContent += `<text x="${cx}" y="${y+cellSize*0.86}" fill="#ffd700" font-size="12" text-anchor="middle" font-weight="bold">${highlight.label}</text>`;
       svgContent += `</g>`;
     }
   }
@@ -265,6 +264,11 @@ export function createNinePalaceGrid(container, escapeData, stemInteraction, adv
   }
 
   svgContent += '</svg>';
-  container.innerHTML = `<div class="glass-panel result-area"><div class="section-header"><span class="section-icon">🧭</span><h2>九宮方位星圖</h2></div><div class="nine-palace-wrapper">${svgContent}</div></div>`;
+  container.innerHTML = `
+    <div class="glass-panel result-area">
+      <div class="section-header"><span class="section-icon">🧭</span><h2>九宮方位星圖</h2></div>
+      <div class="nine-palace-wrapper">${svgContent}</div>
+    </div>
+  `;
   requestAnimationFrame(() => container.querySelector('.result-area')?.classList.add('visible'));
 }
