@@ -10,12 +10,8 @@ import { createEnergyMeter } from './components/EnergyMeter.js';
 import { createResultPanel } from './components/ResultPanel.js';
 import { createMasterVerdictPanel } from './components/MasterVerdictPanel.js';
 
-import { getMonthGeneral } from './engine/monthGeneral.js';
-import { getFourPillars } from './engine/stemBranch.js';
+import { getFourPillars, getMonthGeneral, evaluateEnergy, getKongWang, isJieLuKongWang, getNoblemanBranches, assessPillarInteraction, getTombBranch, ZHI_TO_PALACE } from './engine/constants.js';
 import { getEscapeDirections } from './engine/directions.js';
-import { assessPillarInteraction } from './engine/stemRelation.js';
-import { evaluateEnergy } from './engine/wuxing.js';
-import { getKongWang, isJieLuKongWang, getNoblemanBranches } from './engine/constants.js';
 import { generateMasterVerdict } from './engine/masterVerdict.js';
 
 // 容器
@@ -47,7 +43,11 @@ function onCalculate(date) {
     const isJieLu = isJieLuKongWang(fourPillars.day.stem, hourBranch);
     const noblemen = getNoblemanBranches(fourPillars.day.stem);
 
-    const advancedData = { kongWang, isJieLu, noblemen };
+    // 加入入墓計算 (僅針對日干)
+    const tombBranch = getTombBranch(fourPillars.day.stem);
+    const dayStemTombPalace = tombBranch ? ZHI_TO_PALACE[tombBranch] : null;
+
+    const advancedData = { kongWang, isJieLu, noblemen, dayStemTombPalace, dayStem: fourPillars.day.stem };
     const masterVerdict = generateMasterVerdict(stemInteraction, energyResult, advancedData, escapeDirections);
 
     // ---------------------------------------------------------

@@ -14,9 +14,10 @@ export function generateMasterVerdict(
   let lines = [];
 
   const { relation, verdict, branchRelation, dayInfo } = stemInteraction;
-  const { isJieLu, kongWang, noblemen } = advancedData;
+  const { isJieLu, kongWang, noblemen, dayStemTombPalace } = advancedData;
   const dayPalace = dayInfo.palace;
   const isDayPalaceVoid = kongWang.some(z => ZHI_TO_PALACE[z] === dayPalace);
+  const isDayStemTomb = (dayStemTombPalace === dayPalace);
   const energyScore = (energyResult.score || 0) * 100;
 
   // ---------------------------------------------------------
@@ -41,9 +42,12 @@ export function generateMasterVerdict(
     title = '⛔ 諸事不宜，切勿妄動';
     color = '#f87171';
     lines.push('【最凶警告】當前時辰逢「截路空亡」，時間磁場斷裂。此時起行、周旋皆易成空。即使能量再旺，也會被「強行攔截」，【強烈建議按兵不動】。');
-  } else if (isDayPalaceVoid) {
-    // 解決 90% 能量卻顯示「氣場耗弱」的矛盾
-    if (energyScore > 70) {
+  } else if (isDayPalaceVoid || isDayStemTomb) {
+    if (isDayStemTomb) {
+      title = '⚠️ 氣血入墓，有志難伸';
+      color = '#fbbf24';
+      lines.push('自身落宮適逢「入墓」，代表你目前處於被動、受困或被埋沒的狀態，空有能量卻難以施展。此時宜低調休養，等待衝墓之時。');
+    } else if (energyScore > 70) {
       title = '⚠️ 勢強落空，虛不受補';
       color = '#fbbf24';
       lines.push(`你自身能量極旺 (${energyScore}%)，但目前落入「空亡」之境，猶如英雄無用武之地。目前大勢看似大好，實則「虛而不實」，宜靜觀其變，不宜強攻。`);
@@ -52,6 +56,9 @@ export function generateMasterVerdict(
       color = '#fbbf24';
       lines.push('自身落宮「空亡」且能量不足。這代表你目前狀態不佳、資源匱乏。凡事宜守不宜進，避免輕易做出重大承諾或決策。');
     }
+    
+    // 增加戰略兵法提示 (針對隱匿/逃避)
+    lines.push('💡 **戰略兵法**：此方位對求事不利，但若此刻需「避難、隱蹤、逃避追逐」，此宮位反而是絕佳的「匿蹤之所」，可令對手無從尋覓。');
   } else {
     // 正常情況
     title = `⚖️ ${baseTone}`;
@@ -63,9 +70,9 @@ export function generateMasterVerdict(
   // ---------------------------------------------------------
   if (!isJieLu && branchRelation) {
     if (branchRelation.type === 'liuchong') {
-      title = `🚨 暗流湧動 | ${title.split(' ').pop()}`;
+      title = `🚨 局逢六沖，必有劇變 | ${title.split(' ').pop()}`;
       color = '#ef4444';
-      lines.push('【注意！】本局地支相沖，代表內部利益衝突嚴重或隨時有翻臉生變的危險。即便整體看起來吉利，也要嚴防核心團隊或計畫內容的「破局」。');
+      lines.push('【突發警告】本局地支相沖，局勢散亂。代表事情會有出乎意料的「突發改變」或「快速散夥」。利於逃脫困境 (逢沖則散)，但不利於長線經營。');
     } else if (branchRelation.type === 'liuhe') {
       title = `🤝 暗有助益 | ${title.split(' ').pop()}`;
       lines.push('且地支六合，代表私底下有共同利益或貴人暗盤推動，成功率比表面看起來更高！');

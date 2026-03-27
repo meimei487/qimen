@@ -222,3 +222,14 @@ export function getBranchRelation(dayBranch, hourBranch) {
   
   return null;
 }
+
+// 取得天干入墓地支
+export function getTombBranch(stem) {
+  const map = {
+    '甲': '未', '癸': '未',
+    '乙': '戌', '丙': '戌', '戊': '戌',
+    '丁': '丑', '己': '丑', '庚': '丑',
+    '辛': '辰', '壬': '辰'
+  };
+  return map[stem] || null;
+}

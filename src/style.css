@@ -318,6 +318,28 @@ body {
   transition: all 0.3s ease;
 }
 
+/* 宮位小標籤 (貴人、空亡、入墓) */
+.palace-badges {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  line-height: 1.2;
+}
+
+.void-badge { background: #4b5563; border: 1px solid #9ca3af; }
+.noble-badge { background: #d97706; border: 1px solid #f59e0b; }
+.tomb-badge { background: #581c87; border: 1px solid #9333ea; }
+
 .palace-highlighted {
   animation: palace-glow 2s ease-in-out infinite;
 }
