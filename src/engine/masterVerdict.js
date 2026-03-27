@@ -18,7 +18,7 @@ export function generateMasterVerdict(
   const dayPalace = dayInfo.palace;
   const isDayPalaceVoid = kongWang.some(z => ZHI_TO_PALACE[z] === dayPalace);
   const isDayStemTomb = (dayStemTombPalace === dayPalace);
-  const energyScore = (energyResult.score || 0) * 100;
+  const energyScore = energyResult.overall?.percent || 0;
 
   // ---------------------------------------------------------
   // 1. 底色判斷 (生剋 + 能量)
