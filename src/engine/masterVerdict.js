@@ -15,47 +15,60 @@ export function generateMasterVerdict(
 
   const { relation, verdict, branchRelation, dayInfo } = stemInteraction;
   const { isJieLu, kongWang, noblemen } = advancedData;
-  const isDayKongWang = kongWang.includes(dayInfo.branch) || kongWang.includes(dayInfo.stem); // 嚴格來說只需判斷日干落宮
   const dayPalace = dayInfo.palace;
   const isDayPalaceVoid = kongWang.some(z => ZHI_TO_PALACE[z] === dayPalace);
+  const energyScore = (energyResult.score || 0) * 100;
 
-  // 1. 致命警告 (截路空亡最高優先權)
+  // ---------------------------------------------------------
+  // 1. 底色判斷 (生剋 + 能量)
+  // ---------------------------------------------------------
+  let baseTone = '';
+  if (relation === 'generate' || relation === 'overcomed') {
+    baseTone = energyScore > 70 ? '實力雄厚，勢如破竹' : '主動權在握，漸入佳境';
+    color = '#4ade80';
+  } else if (relation === 'overcome') {
+    baseTone = energyScore > 70 ? '雖有實力，阻力重重' : '環境膠著，步步為營';
+    color = '#f87171';
+  } else {
+    baseTone = energyScore > 70 ? '蓄勢待發，平穩中見機' : '局勢平穩，事在人為';
+    color = '#60a5fa';
+  }
+
+  // ---------------------------------------------------------
+  // 2. 狀態修正 (禁忌與限制)
+  // ---------------------------------------------------------
   if (isJieLu) {
     title = '⛔ 諸事不宜，切勿妄動';
     color = '#f87171';
-    lines.push('當前時辰逢「截路空亡」，時間磁場斷裂。表面機會恐為虛象，此時起行、周旋皆易成空或橫生枝節，【強烈建議暫緩行動，另擇吉時】。');
+    lines.push('【最凶警告】當前時辰逢「截路空亡」，時間磁場斷裂。此時起行、周旋皆易成空。即使能量再旺，也會被「強行攔截」，【強烈建議按兵不動】。');
   } else if (isDayPalaceVoid) {
-    title = '⚠️ 氣場耗弱，不可逞強';
-    color = '#fbbf24';
-    lines.push('自身（日干）落入「空亡」宮位，代表你目前狀態可能不佳、資源難以到位或判斷易失誤。凡事宜守不宜攻，避免輕易承諾。');
-  } else {
-    // 沒有致命時間陷阱，看生剋與能量
-    // 簡單判斷吉凶
-    if (relation === 'generate' || relation === 'overcomed') {
-      title = '🌟 掌握主動，順勢而為';
-      color = '#4ade80';
-      lines.push(`大局${verdict}。時機對你相對有利，可以主導局勢。`);
-    } else if (relation === 'overcome') {
-      title = '⚠️ 阻力重重，步步為營';
-      color = '#f87171';
-      lines.push(`大局${verdict}。外部環境或對方帶來較大壓力，需謹慎應對，不宜硬碰硬。`);
+    // 解決 90% 能量卻顯示「氣場耗弱」的矛盾
+    if (energyScore > 70) {
+      title = '⚠️ 勢強落空，虛不受補';
+      color = '#fbbf24';
+      lines.push(`你自身能量極旺 (${energyScore}%)，但目前落入「空亡」之境，猶如英雄無用武之地。目前大勢看似大好，實則「虛而不實」，宜靜觀其變，不宜強攻。`);
     } else {
-      title = '⚖️ 局勢平穩，事在人為';
-      color = '#60a5fa';
-      lines.push(`目前局勢${verdict}。結果取決於個人的努力與後續操作。`);
+      title = '⚠️ 氣場耗弱，禍不單行';
+      color = '#fbbf24';
+      lines.push('自身落宮「空亡」且能量不足。這代表你目前狀態不佳、資源匱乏。凡事宜守不宜進，避免輕易做出重大承諾或決策。');
     }
-    
-    // 檢查外合內沖/外生內害
-    if (branchRelation) {
-      if (branchRelation.type === 'liuchong') {
-        lines.push('【注意！】這是一個「表面平靜、暗流洶湧」的局，地支相沖代表內部利益衝突嚴重，隨時有生變或翻臉的危險，必須提防破局。');
-        title = '🚨 表面無恙，暗藏危機';
-        color = '#ef4444';
-      } else if (branchRelation.type === 'liuhai' || branchRelation.type === 'xing') {
-        lines.push(`需防範地支${branchRelation.label}帶來的負面影響，小心身邊有人暗中阻撓或口舌是非。`);
-      } else if (branchRelation.type === 'liuhe') {
-        lines.push('且地支六合，事情比表面看起來更穩固，私底下有共同利益或貴人暗盤推動，成功率大增！');
-      }
+  } else {
+    // 正常情況
+    title = `⚖️ ${baseTone}`;
+    lines.push(`大局${verdict}。當前五行能量為 ${energyScore}%，${energyScore > 70 ? '自身氣場強盛，有能力主導局面。' : '狀態中庸，需謹慎佈局。'}`);
+  }
+
+  // ---------------------------------------------------------
+  // 3. 細節微調 (地支沖合)
+  // ---------------------------------------------------------
+  if (!isJieLu && branchRelation) {
+    if (branchRelation.type === 'liuchong') {
+      title = `🚨 暗流湧動 | ${title.split(' ').pop()}`;
+      color = '#ef4444';
+      lines.push('【注意！】本局地支相沖，代表內部利益衝突嚴重或隨時有翻臉生變的危險。即便整體看起來吉利，也要嚴防核心團隊或計畫內容的「破局」。');
+    } else if (branchRelation.type === 'liuhe') {
+      title = `🤝 暗有助益 | ${title.split(' ').pop()}`;
+      lines.push('且地支六合，代表私底下有共同利益或貴人暗盤推動，成功率比表面看起來更高！');
     }
   }
 
