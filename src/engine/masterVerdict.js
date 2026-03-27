@@ -36,33 +36,38 @@ export function generateMasterVerdict(
   }
 
   // ---------------------------------------------------------
-  // 2. 狀態修正 (禁忌與限制)
+  // 2. 狀態修正 (禁忌與限制) - 加入「戰術預視」
   // ---------------------------------------------------------
   if (isJieLu) {
     title = '⛔ 諸事不宜，切勿妄動';
     color = '#f87171';
     lines.push('【最凶警告】當前時辰逢「截路空亡」，時間磁場斷裂。此時起行、周旋皆易成空。即使能量再旺，也會被「強行攔截」，【強烈建議按兵不動】。');
-  } else if (isDayPalaceVoid || isDayStemTomb) {
+  } else {
+    // 預設標題與狀態
+    title = `⚖️ ${baseTone}`;
+    
+    // 自身狀態診斷
     if (isDayStemTomb) {
       title = '⚠️ 氣血入墓，有志難伸';
       color = '#fbbf24';
-      lines.push('自身落宮適逢「入墓」，代表你目前處於被動、受困或被埋沒的狀態，空有能量卻難以施展。此時宜低調休養，等待衝墓之時。');
-    } else if (energyScore > 70) {
+      lines.push('【現狀診斷】您目前正處於「入墓」宮位，代表受困、被動或能量被掩埋。即使外部環境再好，短期內也難以發揮實力。宜低調自保。');
+    } else if (isDayPalaceVoid) {
       title = '⚠️ 勢強落空，虛不受補';
       color = '#fbbf24';
-      lines.push(`你自身能量極旺 (${energyScore}%)，但目前落入「空亡」之境，猶如英雄無用武之地。目前大勢看似大好，實則「虛而不實」，宜靜觀其變，不宜強攻。`);
+      lines.push(`【現狀診斷】您自身能量為 ${energyScore}%，但落入「空亡」之境。目前看似大好，實則「虛而不實」，宜靜觀其變，避免強攻。`);
     } else {
-      title = '⚠️ 氣場耗弱，禍不單行';
-      color = '#fbbf24';
-      lines.push('自身落宮「空亡」且能量不足。這代表你目前狀態不佳、資源匱乏。凡事宜守不宜進，避免輕易做出重大承諾或決策。');
+      lines.push(`【現狀診斷】大局${verdict}。當前五行能量為 ${energyScore}%，${energyScore > 50 ? '氣場充盈，足以應對變局。' : '能量低迷，行事宜保守。'}`);
+    }
+
+    // 戰術預視 (戰略性提示)
+    if (dayStemTombPalace && !isDayStemTomb) {
+      const tombDir = PALACE_DIRECTIONS[dayStemTombPalace];
+      lines.push(`💡 **戰術預視**：注意方位的 **${tombDir}** 為您的墓庫之地。若無隱匿需求，請盡量避開該方位，以免陷入膠著。`);
     }
     
-    // 增加戰略兵法提示 (針對隱匿/逃避)
-    lines.push('💡 **戰略兵法**：此方位對求事不利，但若此刻需「避難、隱蹤、逃避追逐」，此宮位反而是絕佳的「匿蹤之所」，可令對手無從尋覓。');
-  } else {
-    // 正常情況
-    title = `⚖️ ${baseTone}`;
-    lines.push(`大局${verdict}。當前五行能量為 ${energyScore}%，${energyScore > 70 ? '自身氣場強盛，有能力主導局面。' : '狀態中庸，需謹慎佈局。'}`);
+    if (isDayPalaceVoid || isDayStemTomb) {
+      lines.push('💡 **戰略兵法**：此宮位對求事不利，但若需「避難、隱蹤、逃避」，此處反而是絕佳的「匿蹤之所」。');
+    }
   }
 
   // ---------------------------------------------------------
